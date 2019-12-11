@@ -2,11 +2,13 @@
 #include <vector>
 #include "Creature.h"
 #include <random>
+#include <string>
+#include "Logger.h"
 
 using namespace std;
 
-#define amount 10
-#define time 100
+#define amount 4
+#define time 10
 
 
 
@@ -70,6 +72,7 @@ vector<Creature> kill_roulette(vector<Creature> a) {
 void logger(int i, vector<Creature> guys) {
 	double max = -INFINITY;
 	double sum = 0;
+	Logger log("log" + to_string(i) + ".txt");
 	for (int j = 0; j < guys.size(); ++j) {
 		double fit = guys[j].getHonestFit();
 		sum += fit;
@@ -82,6 +85,7 @@ void logger(int i, vector<Creature> guys) {
 	cout << "Guys: " << guys.size() << "\n";
 	for (auto guy : guys) {
 		cout << guy << "\t";
+		log << guy;
 	}
 	cout << "\n Max:"<<max<<"\t "<<"Middle: "<<sum<<"\n\n";
 }
