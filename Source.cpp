@@ -8,7 +8,6 @@
 using namespace std;
 
 #define amount 4
-#define time 10
 
 
 
@@ -33,7 +32,7 @@ Creature random_creature() {
 void sort_by_fit(vector<Creature> &a) {
 	for(int i = 0; i < a.size()-1; ++i) {
 		for(int j = i+1; j < a.size(); ++j) {
-			if(a[j].getFit() > a[i].getFit())
+			if(a[j].getHonestFit() > a[i].getHonestFit())
 				std::swap(a[i], a[j]);
 		}
 	}
@@ -52,12 +51,17 @@ void mate_and_mutate(vector<Creature>& a) {
 vector<Creature> kill_roulette(vector<Creature> a) {
 	double sum = 0;
 	double prob = 0;
-	for (int i = 0; i < a.size(); ++i)
-		sum += a[i].getFit();
+	double min = 0; //нужно только для борьбы с отрицательными fit-функциями, поэтому 0
+	for (int i = 0; i < a.size(); ++i){
+		sum += a[i].getHonestFit();
+		if (a[i].getHonestFit() < min) 
+			min = a[i].getHonestFit();
+	}
 	int size = a.size();
+	sum -= min * size;
 	while (size > amount){
 		int chosen = rand() % a.size();
-		double fit = a[chosen].getFit();
+		double fit = a[chosen].getHonestFit()-min;
 		prob = fit / sum;
 		if (randomizer(0, 1) > prob) {
 			a.erase(a.begin()+chosen, a.begin()+chosen+1);
@@ -69,43 +73,27 @@ vector<Creature> kill_roulette(vector<Creature> a) {
 }
 
 
-void logger(int i, vector<Creature> guys) {
-	double max = -INFINITY;
-	double sum = 0;
-	Logger log("log" + to_string(i) + ".txt");
-	for (int j = 0; j < guys.size(); ++j) {
-		double fit = guys[j].getHonestFit();
-		sum += fit;
-		if (max < fit) {
-			max = fit;
-		}
-	}
-	sum /= guys.size();
-	cout << "Iterration: " << i<<"\n";
-	cout << "Guys: " << guys.size() << "\n";
-	for (auto guy : guys) {
-		cout << guy << "\t";
-		log << guy;
-	}
-	cout << "\n Max:"<<max<<"\t "<<"Middle: "<<sum<<"\n\n";
-}
-
 
 
 int main() {
-	const size_t max = time;
-	vector<Creature> field;
-	field.resize(amount);
-	for (int i = 0; i < amount; ++i)
-		field[i] = random_creature();
-	logger(0, field);
-	for (int i = 1; i<max; ++i) {
-		if (field.size() < 2) {
-			cout << "Everybody died!!\n";
-			break;
+	cout << "Pattern: \n	Creature: (x,y)[fit]\n";
+	for (size_t max : {10, 100}) {
+		cout << "Cycling for " << max << " generations\n";
+		vector<Creature> field;
+		field.resize(amount);
+		for (int i = 0; i < amount; ++i)
+			field[i] = random_creature();
+		Logger::store(0, max, field);
+		for (int i = 1; i <= max; ++i) {
+			if (field.size() < 2) {
+				cout << "Everybody died!!\n";
+				break;
+			}
+			mate_and_mutate(field);
+			field = kill_roulette(field);
+			if(max!=100 || !(i%10)) 
+				Logger::store(i, max, field);
 		}
-		mate_and_mutate(field);
-		field = kill_roulette(field);
-		logger(i, field);
+		cout << "===============================\n";
 	}
 }
